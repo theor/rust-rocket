@@ -2,7 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Deserialize, Copy, Clone)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize))]
 /// The `Interpolation` Type.
 /// This represents the various forms of interpolation that can be performed.
 pub enum Interpolation {

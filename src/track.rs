@@ -3,7 +3,13 @@
 use crate::interpolation::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub trait RocketEngine {
+    fn get_track_index(&self, name: &str) -> Option<usize>;
+    fn get_track(&self, index: usize) ->&Track;
+}
+
+#[derive(Deserialize,  Clone, Copy)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize))]
 /// The `Key` Type.
 pub struct Key {
     row: u32,
@@ -22,7 +28,8 @@ impl Key {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize))]
 /// The `Track` Type. This is a collection of `Key`s with a name.
 pub struct Track {
     name: String,

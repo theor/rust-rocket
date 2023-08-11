@@ -1,6 +1,5 @@
 //! This module contains a barebones player.
-use crate::track::Track;
-use std::collections::HashMap;
+use crate::track::{Track, RocketEngine};
 
 /// A player for tracks dumped by
 /// [`RocketClient::save_tracks`](crate::RocketClient::save_tracks).
@@ -23,24 +22,23 @@ use std::collections::HashMap;
 /// println!("Value at row 123: {}", player.get_track("test").unwrap().get_value(123.));
 /// ```
 pub struct RocketPlayer {
-    tracks: HashMap<String, Track>,
+    tracks: Vec<Track>,
+}
+
+
+impl RocketEngine for RocketPlayer {
+
+    fn get_track_index(&self, name: &str) -> Option<usize> {
+        self.tracks.iter().enumerate().find(|t| t.1.get_name() == name).map(|t| t.0)
+    }
+    fn get_track(&self, index: usize) ->&Track { &self.tracks[index] }
 }
 
 impl RocketPlayer {
     /// Constructs a `RocketPlayer` from `Track`s.
     pub fn new(tracks: Vec<Track>) -> Self {
         // Convert to a HashMap for perf (not benchmarked)
-        let mut tracks_map = HashMap::with_capacity(tracks.len());
-        for track in tracks {
-            tracks_map.insert(track.get_name().to_owned(), track);
-        }
-
-        Self { tracks: tracks_map }
-    }
-
-    /// Get track by name.
-    pub fn get_track(&self, name: &str) -> Option<&Track> {
-        self.tracks.get(name)
+        Self { tracks: tracks }
     }
 }
 

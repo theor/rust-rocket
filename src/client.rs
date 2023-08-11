@@ -56,13 +56,23 @@ enum ReceiveResult {
     Incomplete,
 }
 
-#[derive(Debug)]
 /// The `RocketClient` type. This contains the connected socket and other fields.
 pub struct RocketClient {
     stream: TcpStream,
     state: ClientState,
     cmd: Vec<u8>,
     tracks: Vec<Track>,
+}
+
+impl RocketEngine for RocketClient {
+      /// Get track by name.
+    ///
+    /// You should use [`get_track_mut`](RocketClient::get_track_mut) to create a track.
+    /// 
+    fn get_track_index(&self, name: &str) -> Option<usize> {
+        self.tracks.iter().enumerate().find(|t| t.1.get_name() == name).map(|t| t.0)
+    }
+    fn get_track(&self, index: usize) ->&Track { &self.tracks[index] }
 }
 
 impl RocketClient {
@@ -166,12 +176,7 @@ impl RocketClient {
         }
     }
 
-    /// Get track by name.
-    ///
-    /// You should use [`get_track_mut`](RocketClient::get_track_mut) to create a track.
-    pub fn get_track(&self, name: &str) -> Option<&Track> {
-        self.tracks.iter().find(|t| t.get_name() == name)
-    }
+  
 
     /// Create a clone of the tracks in the session which can then be serialized to a file in any
     /// format with a serde implementation.

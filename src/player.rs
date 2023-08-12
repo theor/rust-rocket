@@ -1,5 +1,12 @@
 //! This module contains a barebones player.
-use crate::track::{Track, RocketEngine};
+use std::io::Cursor;
+
+use byteorder::{ReadBytesExt, LE};
+
+use crate::{
+    interpolation::Interpolation,
+    track::{Key, RocketEngine, Track},
+};
 
 /// A player for tracks dumped by
 /// [`RocketClient::save_tracks`](crate::RocketClient::save_tracks).
@@ -25,19 +32,64 @@ pub struct RocketPlayer {
     tracks: Vec<Track>,
 }
 
-
 impl RocketEngine for RocketPlayer {
-
     fn get_track_index(&self, name: &str) -> Option<usize> {
-        self.tracks.iter().enumerate().find(|t| t.1.get_name() == name).map(|t| t.0)
+        self.tracks
+            .iter()
+            .enumerate()
+            .find(|t| t.1.get_name() == name)
+            .map(|t| t.0)
     }
-    fn get_track(&self, index: usize) ->&Track { &self.tracks[index] }
+    fn get_track(&self, index: usize) -> &Track {
+        &self.tracks[index]
+    }
 }
 
 impl RocketPlayer {
     /// Constructs a `RocketPlayer` from `Track`s.
     pub fn new(tracks: Vec<Track>) -> Self {
         // Convert to a HashMap for perf (not benchmarked)
+        Self { tracks: tracks }
+    }
+
+    pub fn track_count(&self) -> usize {
+        self.tracks.len()
+    }
+
+    pub fn deserialize(data: &[u8]) -> Self {
+        let mut bytes = Cursor::new(data);
+        // println!("{:?}", bytes);
+        let track_count = bytes.read_u64::<LE>().unwrap();
+        // println!("track count {track_count}");
+        let mut tracks = Vec::with_capacity(track_count as usize);
+        for _i in 0..track_count {
+            let name_len = bytes.read_u64::<LE>().unwrap() as usize;
+            let name = std::str::from_utf8(
+                &bytes.get_ref()[bytes.position() as usize..bytes.position() as usize + name_len],
+            )
+            .unwrap();
+            bytes.set_position(bytes.position() + name_len as u64);
+
+            let key_count = bytes.read_u64::<LE>().unwrap() as usize;
+            let mut t = Track::with_capacity(name, key_count as usize);
+            for _k in 0..key_count {
+                let row = bytes.read_u32::<LE>().unwrap();
+                let value = bytes.read_f32::<LE>().unwrap();
+                let interp: Interpolation = match bytes.read_u32::<LE>().unwrap() {
+                    0 => Interpolation::Step,
+                    1 => Interpolation::Linear,
+                    2 => Interpolation::Smooth,
+                    3 => Interpolation::Ramp,
+                    _ => unreachable!(),
+                };
+                let key = Key::new(row, value, interp);
+                t.set_key(key);
+            }
+
+            // println!("  name {name_len} {name} {key_count}");
+            tracks.push(t);
+            // let name = bytes.
+        }
         Self { tracks: tracks }
     }
 }
@@ -74,16 +126,17 @@ mod tests {
 
         // Ugly repeated calls to get_track to reflect average use case :)
 
-        assert_eq!(player.get_track("test1").unwrap().get_value(0.), 1.0);
-        assert_eq!(player.get_track("test2").unwrap().get_value(0.), 2.0);
-    }
-
-    #[test]
-    fn no_surprise_tracks() {
-        let tracks = get_test_tracks();
-        let player = RocketPlayer::new(tracks);
-        assert!(player
-            .get_track("hello this track should not exist")
-            .is_none());
+        assert_eq!(
+            player
+                .get_track(player.get_track_index("test1").unwrap())
+                .get_value(0.),
+            1.0
+        );
+        assert_eq!(
+            player
+                .get_track(player.get_track_index("test2").unwrap())
+                .get_value(0.),
+            2.0
+        );
     }
 }

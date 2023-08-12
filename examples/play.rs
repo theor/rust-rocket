@@ -1,3 +1,4 @@
+use rust_rocket::track::RocketEngine;
 use rust_rocket::RocketPlayer;
 use std::error::Error;
 use std::fs::File;
@@ -8,11 +9,10 @@ static TRACKS_FILE: &str = "tracks.bin";
 fn main() -> Result<(), Box<dyn Error>> {
     let rocket = {
         // Open previously saved file (see examples/edit.rs)
-        let file = File::open(TRACKS_FILE)?;
-        // Deserialize from the file into Vec<Track> using bincode
-        let tracks = bincode::deserialize_from(file)?;
-        // Construct a new read-only, offline RocketPlayer
-        RocketPlayer::new(tracks)
+        let file = std::fs::read(TRACKS_FILE)?;
+        // Deserialize from the file into Vec<Track> and
+        // construct a new read-only, offline RocketPlayer
+        RocketPlayer::deserialize(&file)
     };
     println!("Tracks loaded from {}", TRACKS_FILE);
 
@@ -22,8 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!(
             "value: {:?} (row: {:?})",
             rocket
-                .get_track("test")
-                .unwrap()
+                .get_track(rocket.get_track_index("test").unwrap())
                 .get_value(current_row as f32),
             current_row
         );

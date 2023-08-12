@@ -2,7 +2,7 @@
 use crate::interpolation::*;
 use crate::track::*;
 
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{LE, BigEndian, ReadBytesExt, WriteBytesExt};
 use std::{
     convert::TryFrom,
     io::{Cursor, Read, Write},
@@ -46,7 +46,7 @@ pub enum Event {
     /// The tracker pauses or unpauses.
     Pause(bool),
     /// The tracker asks us to save our track data.
-    /// You may want to call [`RocketClient::save_tracks`] after receiving this event.
+    /// You may want to call [`RocketClient::serialize`] after receiving this event.
     SaveTracks,
 }
 
@@ -176,15 +176,6 @@ impl RocketClient {
         }
     }
 
-  
-
-    /// Create a clone of the tracks in the session which can then be serialized to a file in any
-    /// format with a serde implementation.
-    /// Tracks can be turned into a [`RocketPlayer`](crate::RocketPlayer::new) for playback.
-    pub fn save_tracks(&self) -> Vec<Track> {
-        self.tracks.clone()
-    }
-
     /// Send a SetRow message.
     ///
     /// This changes the current row on the tracker side.
@@ -232,6 +223,17 @@ impl RocketClient {
                 ReceiveResult::Some(event) => return Ok(Some(event)),
             }
         }
+    }
+
+    /// Serialize current tracks as bytes
+    /// Tracks can be turned into a [`RocketPlayer`](crate::RocketPlayer::deserialize) for playback.
+    pub fn serialize(&self) -> Vec<u8> {
+        let mut wtr = vec![];
+        wtr.write_u64::<LE>(self.tracks.len() as u64).unwrap();
+        for t in self.tracks.iter() {
+            t.serialize(&mut wtr);
+        }
+        wtr
     }
 
     fn poll_event(&mut self) -> Result<ReceiveResult, Error> {

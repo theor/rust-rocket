@@ -9,10 +9,10 @@ A client implementation of GNU Rocket.
 repository = "https://github.com/demoscene-rs/rust-rocket"
 edition = "2018"
 
+[features]
+client = []
+
 [dependencies]
 byteorder = "1.4.2"
-serde = { version = "1.0.120", features = ["derive"]}
 thiserror = "1.0.23"
 
-[dev-dependencies]
-bincode = "1.3.1"

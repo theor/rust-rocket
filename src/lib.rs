@@ -1,12 +1,14 @@
 //! This is the rust-rocket crate.
 //! It is designed to work as a client library for GNU Rocket.
 
-#[cfg(not(target_arch = "wasm32"))]
+
+#[cfg(feature = "client")]
 pub mod client;
 pub mod interpolation;
 pub mod player;
 pub mod track;
 
-#[cfg(not(target_arch = "wasm32"))]
+
+#[cfg(feature = "client")]
 pub use client::RocketClient;
 pub use player::RocketPlayer;

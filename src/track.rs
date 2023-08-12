@@ -1,15 +1,17 @@
 //! This module contains `Key` and `Track` types.
 
+use std::io::Write;
+
 use crate::interpolation::*;
-use serde::{Deserialize, Serialize};
+use byteorder::{LE, WriteBytesExt};
 
 pub trait RocketEngine {
     fn get_track_index(&self, name: &str) -> Option<usize>;
     fn get_track(&self, index: usize) ->&Track;
 }
 
-#[derive(Deserialize,  Clone, Copy)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize))]
+#[derive(Clone, Copy)]
+#[cfg_attr(feature = "debug", derive(Debug))]
 /// The `Key` Type.
 pub struct Key {
     row: u32,
@@ -28,8 +30,8 @@ impl Key {
     }
 }
 
-#[derive(Deserialize, Clone)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize))]
+#[derive(Clone)]
+#[cfg_attr(feature = "debug", derive(Debug))]
 /// The `Track` Type. This is a collection of `Key`s with a name.
 pub struct Track {
     name: String,
@@ -42,6 +44,12 @@ impl Track {
         Track {
             name: name.into(),
             keys: Vec::new(),
+        }
+    }
+    pub fn with_capacity<S: Into<String>>(name: S, keys: usize) -> Track {
+        Track {
+            name: name.into(),
+            keys: Vec::with_capacity(keys),
         }
     }
 
@@ -114,6 +122,20 @@ impl Track {
         let it = lower.interpolation.interpolate(t);
 
         (lower.value as f32) + ((higher.value as f32) - (lower.value as f32)) * it
+    }
+
+    #[cfg(feature = "client")]
+    pub(crate) fn serialize(&self, wtr: &mut Vec<u8>) {
+        
+        wtr.write_u64::<LE>(self.get_name().len() as u64).unwrap();
+        wtr.write(self.get_name().as_bytes()).unwrap();
+        wtr.write_u64::<LE>(self.keys.len() as u64).unwrap();
+        for k in self.keys.iter() {
+            wtr.write_u32::<LE>(k.row).unwrap();
+            wtr.write_f32::<LE>(k.value).unwrap();
+            wtr.write_u32::<LE>(k.interpolation as u32).unwrap();
+
+        }
     }
 }
 

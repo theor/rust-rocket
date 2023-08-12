@@ -1,9 +1,8 @@
 //! This module contains anything related to interpolation.
 
-use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Copy, Clone)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize))]
+#[derive( Copy, Clone)]
+#[cfg_attr(feature = "debug", derive(Debug))]
 /// The `Interpolation` Type.
 /// This represents the various forms of interpolation that can be performed.
 pub enum Interpolation {
@@ -44,6 +43,7 @@ impl Interpolation {
     /// assert_eq!(Interpolation::Step.interpolate(0.5), 0.);
     /// ```
     pub fn interpolate(&self, t: f32) -> f32 {
+        // println!("interp {t} {self:?}");
         match *self {
             Interpolation::Step => 0.0,
             Interpolation::Linear => t,

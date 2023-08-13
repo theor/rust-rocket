@@ -146,18 +146,20 @@ impl RocketClient {
     ///
     /// ```rust,no_run
     /// # use rust_rocket::RocketClient;
+    /// # use crate::rust_rocket::track::RocketEngine;
     /// # let mut rocket = RocketClient::new().unwrap();
-    /// let track = rocket.get_track_mut("namespace:track").unwrap();
+    /// let track_index = rocket.get_track_mut("namespace:track").unwrap();
+    /// let track = rocket.get_track(track_index);
     /// track.get_value(3.5);
     /// ```
-    pub fn get_track_mut(&mut self, name: &str) -> Result<&mut Track, Error> {
+    pub fn get_track_mut(&mut self, name: &str) -> Result<usize, Error> {
         if let Some((i, _)) = self
             .tracks
             .iter()
             .enumerate()
             .find(|(_, t)| t.get_name() == name)
         {
-            Ok(&mut self.tracks[i])
+            Ok(i)
         } else {
             // Send GET_TRACK message
             let mut buf = vec![2];
@@ -169,10 +171,7 @@ impl RocketClient {
             self.stream.write_all(&buf).map_err(Error::IOError)?;
 
             self.tracks.push(Track::new(name));
-            Ok(self.tracks.last_mut().unwrap_or_else(||
-                // tracks cannot be empty right after pushing into it, consider changing to
-                // unreachable_unchecked in 1.0
-                unreachable!()))
+            Ok(self.tracks.len() - 1)
         }
     }
 

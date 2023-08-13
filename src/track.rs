@@ -1,8 +1,8 @@
 //! This module contains `Key` and `Track` types.
 
-use std::io::Write;
 
 use crate::interpolation::*;
+use std::io::Write;
 use byteorder::{LE, WriteBytesExt};
 
 pub trait RocketEngine {

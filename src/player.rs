@@ -14,19 +14,19 @@ use crate::{
 /// # Examples
 ///
 /// ```rust,no_run
-/// # use rust_rocket::RocketClient;
 /// # use rust_rocket::RocketPlayer;
-/// let client = RocketClient::new().unwrap();
+/// # use crate::rust_rocket::track::RocketEngine;
+/// // let client = RocketClient::new().unwrap();
 /// // ...
 /// // Run the demo and edit your sync tracks, then call save_tracks
 /// // ...
-/// let tracks = client.save_tracks();
+/// // let tracks = client.serialize();
 /// // ...
 /// // Serialize tracks to a file (see examples/edit.rs)
 /// // And deserialize from a file in your release build (examples/play.rs)
 /// // ...
-/// let player = RocketPlayer::new(tracks);
-/// println!("Value at row 123: {}", player.get_track("test").unwrap().get_value(123.));
+/// let player = RocketPlayer::deserialize(&[]);
+/// println!("Value at row 123: {}", player.get_track(player.get_track_index("test").unwrap()).get_value(123.));
 /// ```
 pub struct RocketPlayer {
     tracks: Vec<Track>,

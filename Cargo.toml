@@ -16,3 +16,13 @@ client = []
 byteorder = "1.4.2"
 thiserror = "1.0.23"
 
+[[example]]
+name = "edit"
+required-features = ["client"]
+
+[[example]]
+name = "play"
+required-features = ["client"]
+
+[package.metadata."docs.rs"]
+all-features = true

@@ -40,6 +40,9 @@ impl RocketEngine for RocketPlayer {
             .find(|t| t.1.get_name() == name)
             .map(|t| t.0)
     }
+    fn get_track_index_mut(&mut self, name: &str) -> Result<usize, std::io::Error> {
+        Ok(self.get_track_index(name).unwrap())
+    }
     fn get_track(&self, index: usize) -> &Track {
         &self.tracks[index]
     }

@@ -7,6 +7,7 @@ use byteorder::{LE, WriteBytesExt};
 
 pub trait RocketEngine {
     fn get_track_index(&self, name: &str) -> Option<usize>;
+    fn get_track_index_mut(&mut self, name: &str) -> Result<usize, std::io::Error>;
     fn get_track(&self, index: usize) ->&Track;
 }
 

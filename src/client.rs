@@ -73,6 +73,51 @@ impl RocketEngine for RocketClient {
         self.tracks.iter().enumerate().find(|t| t.1.get_name() == name).map(|t| t.0)
     }
     fn get_track(&self, index: usize) ->&Track { &self.tracks[index] }
+
+    /// Get track by name.
+    ///
+    /// If the track does not yet exist it will be created.
+    ///
+    /// # Errors
+    ///
+    /// This method can return an [`Error::IOError`] if Rocket tracker disconnects.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if `name`'s length exceeds [`u32::MAX`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use rust_rocket::RocketClient;
+    /// # use crate::rust_rocket::track::RocketEngine;
+    /// # let mut rocket = RocketClient::new().unwrap();
+    /// let track_index = rocket.get_track_index_mut("namespace:track").unwrap();
+    /// let track = rocket.get_track(track_index);
+    /// track.get_value(3.5);
+    /// ```
+     fn get_track_index_mut(&mut self, name: &str) -> Result<usize, std::io::Error> {
+        if let Some((i, _)) = self
+            .tracks
+            .iter()
+            .enumerate()
+            .find(|(_, t)| t.get_name() == name)
+        {
+            Ok(i)
+        } else {
+            // Send GET_TRACK message
+            let mut buf = vec![2];
+            buf.write_u32::<BigEndian>(u32::try_from(name.len()).expect("Track name too long"))
+                .unwrap_or_else(|_|
+                // Can writes to a vec fail? Consider changing to unreachable_unchecked in 1.0
+                unreachable!());
+            buf.extend_from_slice(&name.as_bytes());
+            self.stream.write_all(&buf)?;
+
+            self.tracks.push(Track::new(name));
+            Ok(self.tracks.len() - 1)
+        }
+    }
 }
 
 impl RocketClient {
@@ -128,51 +173,6 @@ impl RocketClient {
             .map_err(Error::SetNonblocking)?;
 
         Ok(rocket)
-    }
-
-    /// Get track by name.
-    ///
-    /// If the track does not yet exist it will be created.
-    ///
-    /// # Errors
-    ///
-    /// This method can return an [`Error::IOError`] if Rocket tracker disconnects.
-    ///
-    /// # Panics
-    ///
-    /// Will panic if `name`'s length exceeds [`u32::MAX`].
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run
-    /// # use rust_rocket::RocketClient;
-    /// # use crate::rust_rocket::track::RocketEngine;
-    /// # let mut rocket = RocketClient::new().unwrap();
-    /// let track_index = rocket.get_track_mut("namespace:track").unwrap();
-    /// let track = rocket.get_track(track_index);
-    /// track.get_value(3.5);
-    /// ```
-    pub fn get_track_mut(&mut self, name: &str) -> Result<usize, Error> {
-        if let Some((i, _)) = self
-            .tracks
-            .iter()
-            .enumerate()
-            .find(|(_, t)| t.get_name() == name)
-        {
-            Ok(i)
-        } else {
-            // Send GET_TRACK message
-            let mut buf = vec![2];
-            buf.write_u32::<BigEndian>(u32::try_from(name.len()).expect("Track name too long"))
-                .unwrap_or_else(|_|
-                // Can writes to a vec fail? Consider changing to unreachable_unchecked in 1.0
-                unreachable!());
-            buf.extend_from_slice(&name.as_bytes());
-            self.stream.write_all(&buf).map_err(Error::IOError)?;
-
-            self.tracks.push(Track::new(name));
-            Ok(self.tracks.len() - 1)
-        }
     }
 
     /// Send a SetRow message.

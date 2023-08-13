@@ -9,9 +9,9 @@ static TRACKS_FILE: &str = "tracks.bin";
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut rocket = RocketClient::new()?;
-    rocket.get_track_mut("test")?;
-    rocket.get_track_mut("test2")?;
-    rocket.get_track_mut("a:test2")?;
+    rocket.get_track_index_mut("test")?;
+    rocket.get_track_index_mut("test2")?;
+    rocket.get_track_index_mut("a:test2")?;
 
     let mut current_row = 0;
     let mut paused = true;
